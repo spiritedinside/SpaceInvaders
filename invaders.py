@@ -18,6 +18,21 @@ class Game():
     """A class to help control and update gameplay"""
 
     def __init__(self, player, alien_group, player_bullet_group, alien_bullet_group):
+        self.round_number = 1
+        self.score = 0
+        self.player = player
+        self.alien_group = alien_group
+        self.player_bullet_group = player_bullet_group
+        self.alien_bullet_group = alien_bullet_group
+
+
+        self.new_round_sound = pygame.mixer.Sound("new_round.wav")
+        self.breach_sound = pygame.mixer.Sound("breach.wav")
+        self.alien_hit_sound = pygame.mixer.Sound("alien_hit.wav")
+        self.player_hit_sound = pygame.mixer.Sound("player_hit.wav")
+
+        # more stuff here
+
 
         self.font = pygame.font.Font("Facon.ttf", 32)
 
@@ -31,7 +46,7 @@ class Game():
         # Set text
         score_text = self.font.render(f"score: {self.score}", True, (255, 255, 255))
         score_rect = score_text.get_rect()
-        self.rect.centerx = WINDOW_WIDTH // 2
+        score_rect.centerx = WINDOW_WIDTH // 2
         score_rect.top = 10
 
         round_text = self.font.render(f"Round: {self.round_number}", True, (255, 255, 255))
@@ -65,7 +80,7 @@ class Game():
             self.player_hit_sound.play()
             self.player.lives -= 1
 
-        self.check_game_status(f"You've been hit!", "Press 'Enter' to continue")
+            self.check_game_status(f"You've been hit!", "Press 'Enter' to continue")
 
     def check_round_completion(self):
         """Check to see if a player has completed a single round"""
@@ -78,11 +93,12 @@ class Game():
         """Start a new round"""
         for col in range(11):
             for row in range(5):
-                alien = Alien([64 + col * 64], [64 + row * 64], [self.round_number], [self.alien_bullet_group])
+                alien = Alien(64 + col * 64, 64 + row * 64, self.round_number,self.alien_bullet_group)
+                self.alien_group.add(alien)
 
         # Pause the game and prompt user to start
         self.new_round_sound.play()
-        self.pause_game([f"Space Invaders Round {self.round_number}"], "Press 'Enter' to begin")
+        self.pause_game(f"Space Invaders Round {self.round_number}", "Press 'Enter' to begin")
 
     def check_game_status(self, main_text, sub_text):
         """Check to see the status of the game and how the player died"""
@@ -91,6 +107,12 @@ class Game():
         self.player.reset()
         for alien in self.alien_group:
             alien.reset()
+
+        #Check if the game is over or if it is a simple round reset
+        if self.player.lives == 0:
+            self.reset_game()
+        else:
+            self.pause_game(main_text, sub_text)
 
     def pause_game(self, main_text, sub_text):
         """Pauses the game"""
@@ -142,9 +164,6 @@ class Game():
         self.player.lives = 5
 
         # Empty groups
-        # TODO: call self.alien_group.empty()
-        # TODO: repeat for alien_bullet_group
-        # TODO: repeat for player_bullet_group
         self.alien_group.empty()
         self.alien_bullet_group.empty()
         self.player_bullet_group.empty()
@@ -181,6 +200,7 @@ class Player(pygame.sprite.Sprite):
         """Update the player"""
         keys = pygame.key.get_pressed()
 
+        #Move the player within the bounds of the screen
         if keys[pygame.K_LEFT] and self.rect.left > 0:
             self.rect.x -= self.velocity
         if keys[pygame.K_RIGHT] and self.rect.right < WINDOW_WIDTH:
@@ -269,7 +289,7 @@ class AlienBullet(pygame.sprite.Sprite):
         super().__init__()
 
         self.image = pygame.image.load("red_laser.png")
-        self.image = self.image.get_rect()
+        self.rect = self.image.get_rect()
         self.rect.centerx = x
         self.rect.centery = y
 
