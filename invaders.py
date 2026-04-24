@@ -51,7 +51,7 @@ class Game():
 
         round_text = self.font.render(f"Round: {self.round_number}", True, (255, 255, 255))
         round_rect = round_text.get_rect()
-        round_rect.topleft = (20, 10)
+        round_rect.topright = (WINDOW_WIDTH - 20, 10)
 
         lives_text = self.font.render(f"Lives: {self.player.lives}", True, (255, 255, 255))
         lives_rect = lives_text.get_rect()
@@ -66,7 +66,32 @@ class Game():
 
     def shift_aliens(self):
         """Shift a wave of aliens down the screen and reverse direction"""
-        pass
+        # Determine if alien group has hit an edge
+        shift = False
+        for alien in (self.alien_group.sprites()):
+            if alien.rect.left <= 0 or alien.rect.right >= WINDOW_WIDTH:
+                shift = True
+
+        # Shift every alien down, change direction, and check for a breach
+        if shift:
+            breach = False
+            for alien in (self.alien_group.sprites()):
+                # Shift down
+                alien.rect.y += 10 * self.round_number
+
+                # Reverse the direction and move the alien off the edge so 'shift' doesn't trigger
+                alien.direction *= -1
+                alien.rect.x += alien.direction * alien.velocity
+
+                # Check if an alien reached the ship
+                if alien.rect.bottom >= WINDOW_HEIGHT - 100:
+                    breach = True
+
+            # Aliens breached the line
+            if breach:
+                self.breach_sound.play()
+                self.player.lives -= 1
+                self.check_game_status("Aliens breach the line", "Press 'Enter' to continue")
 
     def check_collisions(self):
         """Check for collisions"""
